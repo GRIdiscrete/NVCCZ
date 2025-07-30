@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+body {
+  @apply antialiased;
+}
+
+/* Active nav link style - you can use this with Next.js' usePathname to highlight active route */
+.active-nav-link {
+  @apply bg-blue-50 text-blue-700 font-medium;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}

@@ -9,16 +9,30 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@types/echarts": "^4.9.22",
+    "apexcharts": "^5.3.1",
+    "axios": "^1.11.0",
+    "canvas": "^3.1.2",
+    "chart.js": "^4.5.0",
+    "echarts": "^5.6.0",
+    "framer-motion": "^12.23.9",
+    "lucide-react": "^0.525.0",
+    "mammoth": "^1.9.1",
+    "next": "15.4.4",
+    "pdfjs-dist": "^2.16.105",
     "react": "19.1.0",
+    "react-apexcharts": "^1.7.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0",
-    "next": "15.4.4"
+    "recharts": "^3.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
