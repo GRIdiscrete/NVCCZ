@@ -1,5 +1,5 @@
 // app/single-fund/page.tsx
-"use server"
+
 
 import axios from "axios";
 import DashboardLayout from "../dlayout";
@@ -10,6 +10,7 @@ export async function createFund(
   prevState: { success: boolean; message: string } | null,
   formData: FormData
 ): Promise<{ success: boolean; message: string }> {
+  "use server"
   try {
     const payload = {
       fund_name: formData.get('fund_name'),
@@ -40,6 +41,7 @@ export async function createFund(
 }
 
 export async function getFunds() {
+  "use server"
   try {
     const response = await axios.get(
       'http://34.59.74.22/api/method/fund',
