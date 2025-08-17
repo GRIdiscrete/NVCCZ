@@ -12,6 +12,7 @@ import Posts from "./tabs/posts";
 import EventsCalendar from "./tabs/calendar";
 import NewsletterCarousel from "./tabs/newsletter";
 import FeedPage from "./tabs/feeds";
+import Dashboard from "./tabs/dashboard";
 import { ChatbotProvider } from "@/components/chatbot";
 
 export default function Home() {
@@ -215,7 +216,7 @@ export default function Home() {
           className="w-full max-w-[90%]"
           onValueChange={(value) => setCurrentTab(value)}
         >
-          <TabsList className="grid w-full grid-cols-4 gap-2 p-2 rounded-xl mb-8" style={{
+          <TabsList className="grid w-full grid-cols-5 gap-2 p-2 rounded-xl mb-8" style={{
             backgroundColor: 'rgba(30, 41, 59, 0.8)',
             border: '1px solid rgba(55, 65, 81, 0.5)',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -245,6 +246,28 @@ export default function Home() {
                   style={{
                     backgroundColor: 'rgba(30, 58, 138, 0)',
                     border: '1px solid transparent'
+                  }}
+                />
+              </motion.button>
+            </TabsTrigger>
+            
+            <TabsTrigger value="dashboard" asChild>
+              <motion.button
+                className="relative overflow-hidden rounded-lg px-6 py-3 text-sm font-medium group w-full"
+                variants={tabVariants}
+                initial="inactive"
+                animate={currentTab === "dashboard" ? "active" : "inactive"}
+                whileHover="hover"
+                style={{
+                  color: '#d1d5db',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <span className="relative z-10">Dashboard</span>
+                <span 
+                  className="absolute inset-0 opacity-0 rounded-lg transition-opacity duration-300 group-data-[state=active]:opacity-100" 
+                  style={{
+                    background: 'linear-gradient(to right, #1e3a8a, #3b82f6)'
                   }}
                 />
               </motion.button>
@@ -336,6 +359,12 @@ export default function Home() {
                 {currentTab === "feed" && (
                   <TabsContent value="feed" className="text-gray-300">
                     <FeedPage/>
+                  </TabsContent>
+                )}
+                
+                {currentTab === "dashboard" && (
+                  <TabsContent value="dashboard" className="text-gray-300">
+                    <Dashboard />
                   </TabsContent>
                 )}
                 
