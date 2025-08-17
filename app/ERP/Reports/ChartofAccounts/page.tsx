@@ -109,7 +109,7 @@ const ChartOfAccounts = () => {
     const accountTypes = [...new Set(accounts.map(account => account.accountType))];
 
     return (
-        <ERP>
+        <>
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                     <div>
@@ -216,7 +216,7 @@ const ChartOfAccounts = () => {
                 </div>
             )}
         </div>
-    </ERP>
+    </>
 );
 }
  

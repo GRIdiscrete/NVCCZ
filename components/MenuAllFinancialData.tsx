@@ -155,7 +155,7 @@ const ZimFinancialData = () => {
 
         {/* Inline Menu */}
         <div className="relative">
-          <div className="flex flex-wrap gap-2 mb-8 justify-center">
+          <div className="flex flex-wrap gap-2 mb-4 justify-center">
             {menuItems.map((item) => {
               const IconComponent = item.icon;
               const isHovered = hoveredSection === item.id;

@@ -247,7 +247,7 @@ const Invoices = () => {
   }
 
   return (
-    <ERP>
+    <>
       <div className="p-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -530,7 +530,7 @@ const Invoices = () => {
           </div>
         )}
       </div>
-    </ERP>
+    </>
   )
 }
 

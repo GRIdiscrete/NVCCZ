@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart3, TrendingUp, Users, Calendar, DollarSign, Activity, Target, Award, Download, Plus, ChevronDown, Building2, ArrowLeftRight, X } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface UserData {
   id: string;
@@ -51,15 +52,64 @@ interface TargetsResponse {
   };
 }
 
+interface Transaction {
+  id: string;
+  accountId: string;
+  accountName: string;
+  accountNo: string;
+  amount: number;
+  transactionDate: string;
+  description: string;
+  referenceNumber: string;
+}
+
+interface ActualData {
+  revenue: {
+    amount: number;
+    transactions: Transaction[];
+    transactionDates: string[];
+  };
+  expenses: {
+    amount: number;
+    transactions: Transaction[];
+    transactionDates: string[];
+  };
+  profit: {
+    amount: number;
+    dateRange: {
+      earliestDate: string;
+      latestDate: string;
+    };
+  };
+}
+
+interface ActualDataResponse {
+  success: boolean;
+  message: string;
+  data: ActualData;
+  timestamp: string;
+}
+
+interface ChartDataPoint {
+  date: string;
+  amount: number;
+  cumulative: number;
+  targetAmount?: number;
+}
+
+interface ComparisonChartDataPoint {
+  date: string;
+  firstTargetCumulative: number;
+  secondTargetCumulative: number;
+  firstTargetAmount: number;
+  secondTargetAmount: number;
+}
+
 const Dashboard = () => {
   const [mounted, setMounted] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState('Choose Target');
-  const [startDate, setStartDate] = useState('2025-01-01');
-  const [endDate, setEndDate] = useState('2025-12-31');
   const [firstTarget, setFirstTarget] = useState('Choose Target');
   const [secondTarget, setSecondTarget] = useState('Choose Target');
-  const [comparisonStartDate, setComparisonStartDate] = useState('2024-01-01');
-  const [daysToInclude, setDaysToInclude] = useState('3000');
   
   // User data state
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -69,19 +119,29 @@ const Dashboard = () => {
   const [targets, setTargets] = useState<TargetData[]>([]);
   const [targetsLoading, setTargetsLoading] = useState(true);
   
+  // Actual data state
+  const [actualData, setActualData] = useState<ActualData | null>(null);
+  const [actualDataLoading, setActualDataLoading] = useState(true);
+  
+  // Chart data state
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [comparisonChartData, setComparisonChartData] = useState<ComparisonChartDataPoint[]>([]);
+  
   // Modal state
   const [showTargetModal, setShowTargetModal] = useState(false);
   const [targetFormData, setTargetFormData] = useState({
-    type: 'Sales',
+    type: 'Revenue',
     value: '',
     deadline: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [targetError, setTargetError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
     fetchUserData();
     fetchTargets();
+    fetchActualData();
   }, []);
 
   const fetchUserData = async () => {
@@ -140,7 +200,7 @@ const Dashboard = () => {
       if (data.success) {
         setTargets(data.data);
       } else {
-        throw new Error(data.message || 'Failed to fetch targets');
+        throw new Error('Failed to fetch targets');
       }
     } catch (err) {
       console.error('Error fetching targets:', err);
@@ -149,9 +209,43 @@ const Dashboard = () => {
     }
   };
 
+  const fetchActualData = async () => {
+    try {
+      setActualDataLoading(true);
+      const token = sessionStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await fetch('https://nvccz-pi.vercel.app/api/target-tracking/actual-data', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch actual data: ${response.status}`);
+      }
+
+      const data: ActualDataResponse = await response.json();
+      if (data.success) {
+        setActualData(data.data);
+      } else {
+        throw new Error(data.message || 'Failed to fetch actual data');
+      }
+    } catch (err) {
+      console.error('Error fetching actual data:', err);
+    } finally {
+      setActualDataLoading(false);
+    }
+  };
+
   const handleTargetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setTargetError(null); // Clear any previous errors
     
     try {
       const token = sessionStorage.getItem('token');
@@ -172,28 +266,28 @@ const Dashboard = () => {
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create target: ${response.status}`);
-      }
-
       const result = await response.json();
+      
       if (result.success) {
         // Add the new target to the existing targets array
         setTargets(prev => [result.data, ...prev]);
         
         // Reset form and close modal
         setTargetFormData({
-          type: 'Sales',
+          type: 'Revenue',
           value: '',
           deadline: ''
         });
         setShowTargetModal(false);
+        setTargetError(null);
       } else {
-        throw new Error(result.message || 'Failed to create target');
+        // Handle API error response
+        const errorMessage = result.error || result.message || 'Failed to create target';
+        setTargetError(errorMessage);
       }
     } catch (err) {
       console.error('Error creating target:', err);
-      alert(err instanceof Error ? err.message : 'Failed to create target');
+      setTargetError(err instanceof Error ? err.message : 'Failed to create target');
     } finally {
       setIsSubmitting(false);
     }
@@ -205,6 +299,26 @@ const Dashboard = () => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (targetError) {
+      setTargetError(null);
+    }
+  };
+
+  const handleOpenModal = () => {
+    setShowTargetModal(true);
+    setTargetError(null); // Clear any previous errors
+  };
+
+  const handleCloseModal = () => {
+    setShowTargetModal(false);
+    setTargetError(null);
+    // Reset form data
+    setTargetFormData({
+      type: 'Revenue',
+      value: '',
+      deadline: ''
+    });
   };
 
   const formatTargetName = (target: TargetData) => {
@@ -212,6 +326,157 @@ const Dashboard = () => {
     const value = parseFloat(target.value).toLocaleString();
     return `${target.type} - $${value} (Due: ${deadline})`;
   };
+
+  // Generate chart data based on selected target
+  const generateChartData = useCallback((targetId: string, targetType: string) => {
+    if (!actualData || !targets) return [];
+
+    const selectedTargetData = targets.find(t => t.id === targetId);
+    if (!selectedTargetData) return [];
+
+    const targetDeadline = new Date(selectedTargetData.deadline);
+    const targetAmount = parseFloat(selectedTargetData.value);
+
+    let transactions: Transaction[] = [];
+    
+    // Get transactions based on target type
+    switch (targetType) {
+      case 'Revenue':
+        transactions = actualData.revenue.transactions;
+        break;
+      case 'Expenses':
+        transactions = actualData.expenses.transactions;
+        break;
+      case 'Profit':
+        // For profit, we'll use revenue - expenses
+        const revenueTransactions = actualData.revenue.transactions;
+        const expenseTransactions = actualData.expenses.transactions;
+        transactions = [...revenueTransactions, ...expenseTransactions];
+        break;
+    }
+
+    // Filter transactions up to target deadline
+    const filteredTransactions = transactions.filter(t => 
+      new Date(t.transactionDate) <= targetDeadline
+    );
+
+    // Sort by date
+    filteredTransactions.sort((a, b) => 
+      new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
+    );
+
+    // Generate chart data points
+    const chartDataPoints: ChartDataPoint[] = [];
+    let cumulative = 0;
+
+    filteredTransactions.forEach((transaction, index) => {
+      let amount = transaction.amount;
+      
+      // For profit calculation
+      if (targetType === 'Profit') {
+        // Determine if this is revenue or expense based on account type
+        const isRevenue = actualData.revenue.transactions.some(t => t.id === transaction.id);
+        amount = isRevenue ? amount : -amount;
+      }
+
+      cumulative += amount;
+      
+      chartDataPoints.push({
+        date: new Date(transaction.transactionDate).toLocaleDateString(),
+        amount: amount,
+        cumulative: cumulative,
+        targetAmount: targetAmount
+      });
+    });
+
+    return chartDataPoints;
+  }, [actualData, targets]);
+
+  // Combine chart data for comparison
+  const combineChartData = useCallback((firstData: ChartDataPoint[], secondData: ChartDataPoint[], firstTargetData: TargetData, secondTargetData: TargetData) => {
+    // Get all unique dates from both datasets
+    const allDates = new Set([
+      ...firstData.map(d => d.date),
+      ...secondData.map(d => d.date)
+    ]);
+    
+    const sortedDates = Array.from(allDates).sort((a, b) => 
+      new Date(a).getTime() - new Date(b).getTime()
+    );
+
+    const combinedData: ComparisonChartDataPoint[] = [];
+    
+    sortedDates.forEach(date => {
+      const firstPoint = firstData.find(d => d.date === date);
+      const secondPoint = secondData.find(d => d.date === date);
+      
+      combinedData.push({
+        date: date,
+        firstTargetCumulative: firstPoint?.cumulative || 0,
+        secondTargetCumulative: secondPoint?.cumulative || 0,
+        firstTargetAmount: firstPoint?.amount || 0,
+        secondTargetAmount: secondPoint?.amount || 0
+      });
+    });
+
+    return combinedData;
+  }, []);
+
+  // Auto-select first target when targets are loaded
+  useEffect(() => {
+    if (targets.length > 0 && selectedTarget === 'Choose Target') {
+      setSelectedTarget(targets[0].id);
+    }
+  }, [targets, selectedTarget]);
+
+  // Update chart data when target selection changes
+  useEffect(() => {
+    if (selectedTarget !== 'Choose Target' && actualData && targets && !actualDataLoading) {
+      const selectedTargetData = targets.find(t => t.id === selectedTarget);
+      if (selectedTargetData) {
+        const data = generateChartData(selectedTarget, selectedTargetData.type);
+        setChartData(data);
+      }
+    }
+  }, [selectedTarget, actualData, targets, actualDataLoading, generateChartData]);
+
+  // Update comparison chart data when comparison targets change
+  useEffect(() => {
+    if (firstTarget !== 'Choose Target' && secondTarget !== 'Choose Target' && actualData && targets && !actualDataLoading) {
+      const firstTargetData = targets.find(t => t.id === firstTarget);
+      const secondTargetData = targets.find(t => t.id === secondTarget);
+      
+      if (firstTargetData && secondTargetData) {
+        const firstData = generateChartData(firstTarget, firstTargetData.type);
+        const secondData = generateChartData(secondTarget, secondTargetData.type);
+        
+        // Combine the data for comparison chart
+        const combinedData = combineChartData(firstData, secondData, firstTargetData, secondTargetData);
+        setComparisonChartData(combinedData);
+      }
+    } else {
+      setComparisonChartData([]);
+    }
+  }, [firstTarget, secondTarget, actualData, targets, actualDataLoading, generateChartData, combineChartData]);
+
+  // Calculate progress percentage
+  const calculateProgress = useCallback(() => {
+    if (chartData.length === 0 || !selectedTarget || selectedTarget === 'Choose Target') return 0;
+    
+    const selectedTargetData = targets.find((t: TargetData) => t.id === selectedTarget);
+    if (!selectedTargetData) return 0;
+    
+    const targetAmount = parseFloat(selectedTargetData.value);
+    const currentAmount = chartData[chartData.length - 1]?.cumulative || 0;
+    
+    return Math.min((currentAmount / targetAmount) * 100, 100);
+  }, [chartData, selectedTarget, targets]);
+
+  // Calculate total amount
+  const calculateTotal = useCallback(() => {
+    if (chartData.length === 0) return 0;
+    return chartData[chartData.length - 1]?.cumulative || 0;
+  }, [chartData]);
 
   if (!mounted) {
     return (
@@ -224,88 +489,153 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Good morning, {userData ? `${userData.firstName} ${userData.lastName}` : 'admin'}
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            {userLoading ? (
+              <div className="flex items-center space-x-3">
+                <span>Good morning,</span>
+                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              `Good morning, ${userData ? `${userData.firstName} ${userData.lastName}` : 'admin'}`
+            )}
           </h1>
         </div>
         
         {/* Action Buttons */}
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
           <button 
-            onClick={() => setShowTargetModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 rounded-lg transition-all duration-200"
+            onClick={handleOpenModal}
+            className="flex items-center justify-center space-x-2 px-4 py-3 sm:py-2 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 rounded-lg transition-all duration-200 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 text-green-400" />
-            <span className="text-green-400 text-sm">+ Set Target</span>
+            <span className="text-green-400 text-sm font-medium">Set Target</span>
           </button>
           
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <select 
               value={selectedTarget}
               onChange={(e) => setSelectedTarget(e.target.value)}
-              className="appearance-none flex items-center space-x-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-700/70 border border-gray-600/50 rounded-lg transition-all duration-200 text-gray-300 text-sm pr-8"
+              className="appearance-none w-full px-4 py-3 sm:py-2 bg-gray-700/50 hover:bg-gray-700/70 border border-gray-600/50 rounded-lg transition-all duration-200 text-gray-300 text-sm pr-8"
+              disabled={targetsLoading}
             >
-              <option value="Choose Target">Choose Target</option>
-              {targets.map((target) => (
-                <option key={target.id} value={target.id}>
-                  {formatTargetName(target)}
-                </option>
-              ))}
+              {targetsLoading ? (
+                <option value="Choose Target">Loading targets...</option>
+              ) : (
+                <>
+                  <option value="Choose Target">Choose Target</option>
+                  {targets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {formatTargetName(target)}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            {targetsLoading ? (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            )}
           </div>
         </div>
       </div>
 
-      {/* Target Per Month Section */}
-      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Target Per Month</h2>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-green-400 text-sm font-medium">Progress: 0.0%</p>
+              {/* Target Per Month Section */}
+        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-white">
+              {targetsLoading ? (
+                <div className="flex items-center space-x-2">
+                  <span>Loading...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : selectedTarget !== 'Choose Target' && targets.length > 0 
+                ? `${targets.find(t => t.id === selectedTarget)?.type} Target`
+                : 'Target Per Month'
+              }
+            </h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              <div className="text-left sm:text-right">
+                <p className={`text-sm font-medium ${calculateProgress() < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                  Progress: {calculateProgress().toFixed(1)}%
+                </p>
+              </div>
+              <div className="text-left sm:text-right">
+                <p className={`text-sm font-medium ${calculateTotal() < 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                  Total: ${calculateTotal().toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-blue-400 text-sm font-medium">Total: 0</p>
+          </div>
+        
+        {/* Chart */}
+        <div className="h-64 bg-gray-700/30 rounded-lg mb-6">
+          {actualDataLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-400 mb-2">Loading chart data...</p>
+                <p className="text-gray-500 text-sm">Please wait while we fetch your data.</p>
+              </div>
             </div>
-          </div>
-        </div>
-        
-        {/* Chart Placeholder */}
-        <div className="h-64 bg-gray-700/30 rounded-lg flex items-center justify-center mb-6">
-          <div className="text-center">
-            <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400 mb-2">No revenue data available.</p>
-            <p className="text-gray-500 text-sm">Try selecting a different date range or target.</p>
-          </div>
-        </div>
-        
-        {/* Date Range Selector */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-400 text-sm">Date Range:</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-400 text-sm">Start Date:</span>
-            <input 
-              type="date" 
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-gray-300 text-sm"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-400 text-sm">End Date:</span>
-            <input 
-              type="date" 
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-gray-300 text-sm"
-            />
-          </div>
+          ) : selectedTarget !== 'Choose Target' && chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#9CA3AF"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="#9CA3AF"
+                  fontSize={12}
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    color: '#F9FAFB'
+                  }}
+                  formatter={(value: number, name: string) => [
+                    `$${value.toLocaleString()}`,
+                    name === 'cumulative' ? 'Cumulative' : 'Transaction'
+                  ]}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="cumulative" 
+                  stroke={calculateTotal() < 0 ? "#EF4444" : "#3B82F6"}
+                  strokeWidth={2}
+                  dot={{ fill: calculateTotal() < 0 ? "#EF4444" : "#3B82F6", strokeWidth: 2, r: 4 }}
+                  name="Actual Progress"
+                />
+                {chartData[0]?.targetAmount && (
+                  <ReferenceLine 
+                    y={chartData[0].targetAmount} 
+                    stroke="#EF4444" 
+                    strokeDasharray="3 3"
+                    label="Target"
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-400 mb-2">Select a target to view data.</p>
+                <p className="text-gray-500 text-sm">Choose from the dropdown above.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -320,15 +650,28 @@ const Dashboard = () => {
               value={firstTarget}
               onChange={(e) => setFirstTarget(e.target.value)}
               className="w-full appearance-none px-4 py-2 bg-gray-700/50 hover:bg-gray-700/70 border border-gray-600/50 rounded-lg transition-all duration-200 text-gray-300 text-sm pr-8"
+              disabled={targetsLoading}
             >
-              <option value="Choose Target">Choose Target</option>
-              {targets.map((target) => (
-                <option key={target.id} value={target.id}>
-                  {formatTargetName(target)}
-                </option>
-              ))}
+              {targetsLoading ? (
+                <option value="Choose Target">Loading targets...</option>
+              ) : (
+                <>
+                  <option value="Choose Target">Choose Target</option>
+                  {targets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {formatTargetName(target)}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            {targetsLoading ? (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            )}
           </div>
           
           <div className="relative">
@@ -336,154 +679,210 @@ const Dashboard = () => {
               value={secondTarget}
               onChange={(e) => setSecondTarget(e.target.value)}
               className="w-full appearance-none px-4 py-2 bg-gray-700/50 hover:bg-gray-700/70 border border-gray-600/50 rounded-lg transition-all duration-200 text-gray-300 text-sm pr-8"
+              disabled={targetsLoading}
             >
-              <option value="Choose Target">Choose Target</option>
-              {targets.map((target) => (
-                <option key={target.id} value={target.id}>
-                  {formatTargetName(target)}
-                </option>
-              ))}
+              {targetsLoading ? (
+                <option value="Choose Target">Loading targets...</option>
+              ) : (
+                <>
+                  <option value="Choose Target">Choose Target</option>
+                  {targets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {formatTargetName(target)}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            {targetsLoading ? (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            )}
           </div>
         </div>
         
-        {/* Comparison Chart Placeholder */}
-        <div className="h-48 bg-gray-700/30 rounded-lg flex items-center justify-center mb-6">
-          <div className="text-center">
-            <ArrowLeftRight className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">Select two targets to compare.</p>
-            <p className="text-gray-500 text-xs">Choose from the dropdown menus above.</p>
-          </div>
-        </div>
-        
-        {/* Input Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-400 text-sm">Start Date:</span>
-            <input 
-              type="date" 
-              value={comparisonStartDate}
-              onChange={(e) => setComparisonStartDate(e.target.value)}
-              className="px-3 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-gray-300 text-sm"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-400 text-sm">Days to Include:</span>
-            <input 
-              type="number" 
-              value={daysToInclude}
-              onChange={(e) => setDaysToInclude(e.target.value)}
-              className="px-3 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-gray-300 text-sm w-20"
-            />
-          </div>
+        {/* Comparison Chart */}
+        <div className="h-48 bg-gray-700/30 rounded-lg mb-6">
+          {actualDataLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto mb-3"></div>
+                <p className="text-gray-400 text-sm">Loading comparison data...</p>
+                <p className="text-gray-500 text-xs">Please wait while we fetch your data.</p>
+              </div>
+            </div>
+          ) : firstTarget !== 'Choose Target' && secondTarget !== 'Choose Target' && comparisonChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={comparisonChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#9CA3AF"
+                  fontSize={10}
+                />
+                <YAxis 
+                  stroke="#9CA3AF"
+                  fontSize={10}
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    color: '#F9FAFB'
+                  }}
+                  formatter={(value: number, name: string) => [
+                    `$${value.toLocaleString()}`,
+                    name === 'firstTargetCumulative' ? 'First Target' : 'Second Target'
+                  ]}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="firstTargetCumulative" 
+                  stroke="#3B82F6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
+                  name="First Target"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="secondTargetCumulative" 
+                  stroke="#10B981" 
+                  strokeWidth={2}
+                  dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
+                  name="Second Target"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <ArrowLeftRight className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-400 text-sm">Select two targets to compare.</p>
+                <p className="text-gray-500 text-xs">Choose from the dropdown menus above.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-                                                       {/* Target Creation Modal */}
-         {showTargetModal && (
-           <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-           <div 
-             className="bg-slate-800 rounded-xl p-6 w-full max-w-2xl"
-             style={{
-               backdropFilter: 'blur(12px)',
-               border: '1px solid rgba(55, 65, 81, 0.4)'
-             }}
-           >
-             <div className="flex justify-between items-center mb-6">
-               <h2 className="text-xl font-bold text-white">Create New Target</h2>
-               <button 
-                 onClick={() => setShowTargetModal(false)}
-                 className="text-gray-400 hover:text-white transition-colors"
-               >
-                 <X className="w-6 h-6" />
-               </button>
-             </div>
+      {/* Target Creation Modal */}
+      {showTargetModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div 
+          className="bg-slate-800 rounded-xl p-6 w-full max-w-2xl"
+          style={{
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(55, 65, 81, 0.4)'
+          }}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-white">Create New Target</h2>
+            <button 
+              onClick={handleCloseModal}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
-             <form onSubmit={handleTargetSubmit} className="space-y-6">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div>
-                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                     Target Type*
-                   </label>
-                   <select
-                     name="type"
-                     value={targetFormData.type}
-                     onChange={handleInputChange}
-                     className="w-full p-3 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
-                     required
-                     disabled={isSubmitting}
-                   >
-                     <option value="Sales">Sales</option>
-                     <option value="Revenue">Revenue</option>
-                     <option value="Expenses">Expenses</option>
-                     <option value="Profit">Profit</option>
-                   </select>
-                 </div>
+          <form onSubmit={handleTargetSubmit} className="space-y-6">
+            {/* Error Display */}
+            {targetError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                  <p className="text-red-400 text-sm font-medium">Error</p>
+                </div>
+                <p className="text-red-300 text-sm mt-1">{targetError}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Target Type*
+                </label>
+                <select
+                  name="type"
+                  value={targetFormData.type}
+                  onChange={handleInputChange}
+                  className="w-full p-3 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
+                  required
+                  disabled={isSubmitting}
+                >
+                  <option value="Revenue">Revenue</option>
+                  <option value="Expenses">Expenses</option>
+                  <option value="Profit">Profit</option>
+                </select>
+              </div>
 
-                 <div>
-                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                     Target Value*
-                   </label>
-                   <input
-                     type="number"
-                     name="value"
-                     value={targetFormData.value}
-                     onChange={handleInputChange}
-                     className="w-full p-3 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
-                     placeholder="0.00"
-                     step="0.01"
-                     min="0"
-                     required
-                     disabled={isSubmitting}
-                   />
-                 </div>
-               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Target Value*
+                </label>
+                <input
+                  type="number"
+                  name="value"
+                  value={targetFormData.value}
+                  onChange={handleInputChange}
+                  className="w-full p-3 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
 
-               <div>
-                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                   Deadline*
-                 </label>
-                 <input
-                   type="date"
-                   name="deadline"
-                   value={targetFormData.deadline}
-                   onChange={handleInputChange}
-                   className="w-full p-3 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
-                   required
-                   disabled={isSubmitting}
-                 />
-               </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Deadline*
+              </label>
+              <input
+                type="date"
+                name="deadline"
+                value={targetFormData.deadline}
+                onChange={handleInputChange}
+                className="w-full p-3 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
+                required
+                disabled={isSubmitting}
+              />
+            </div>
 
-               <div className="flex space-x-4 pt-6 border-t border-gray-700">
-                 <button
-                   type="button"
-                   onClick={() => setShowTargetModal(false)}
-                   className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 font-medium"
-                   disabled={isSubmitting}
-                 >
-                   Cancel
-                 </button>
-                 <button
-                   type="submit"
-                   className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 font-medium"
-                   disabled={isSubmitting}
-                 >
-                   {isSubmitting ? (
-                     <div className="flex items-center justify-center">
-                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                       Creating...
-                     </div>
-                   ) : (
-                     'Create Target'
-                   )}
-                 </button>
-               </div>
-             </form>
-           </div>
-         </div>
-       )}
+            <div className="flex space-x-4 pt-6 border-t border-gray-700">
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 font-medium"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 font-medium"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </div>
+                ) : (
+                  'Create Target'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
     </div>
   );
 };

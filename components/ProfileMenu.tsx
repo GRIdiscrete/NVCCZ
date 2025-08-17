@@ -123,24 +123,24 @@ export default function ProfileMenu() {
               className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white"
             >
               <Building2 className="mr-3 h-4 w-4" />
-              Organization
+              Organization Settings
             </a>
             
-            <a
+            {/* <a
               href="/ERP/Dashboard"
               className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white"
             >
               <LayoutDashboard className="mr-3 h-4 w-4" />
               Accounting 
-            </a>
+            </a> */}
             
-               <a
+               {/* <a
               href="https://nvccz-performance-management1.vercel.app/" target="_blank" rel="noopener noreferrer"
               className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white"
             >
               <Building2 className="mr-3 h-4 w-4" />
               Perfomance Management
-            </a>
+            </a> */}
             <div className="border-t border-gray-700" />
             
             <button

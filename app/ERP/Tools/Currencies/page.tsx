@@ -189,26 +189,26 @@ const Currencies = () => {
 
   if (loading) {
     return (
-      <ERP>
+      
         <div className="p-6 flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      </ERP>
+      
     );
   }
 
   if (error) {
     return (
-      <ERP>
+      
         <div className="p-6 text-red-500">{error}</div>
-      </ERP>
+      
     );
   }
 
 
 
   return (
-    <ERP>
+    
       <div className="p-6">
         {/* Header with Create Button */}
         <div className="flex justify-between items-center mb-6">
@@ -514,7 +514,7 @@ const Currencies = () => {
           </div>
         )}
       </div>
-    </ERP>
+    
   );
 };
 

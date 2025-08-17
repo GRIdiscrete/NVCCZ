@@ -354,7 +354,7 @@ const GeneralLedger = () => {
   };
 
   return (
-    <ERP>
+    <>
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-4">
@@ -679,7 +679,7 @@ const GeneralLedger = () => {
           </div>
         )}
       </div>
-    </ERP>
+    </>
   );
 }
 

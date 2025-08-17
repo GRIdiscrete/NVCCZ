@@ -1,10 +1,10 @@
 import ERP from "../page";
 
 const Invoices = () => {
-    return ( <>    <ERP>
+    return ( <>    <>
 
         <p>hi</p>
-    </ERP></> );
+    </></> );
 }
  
 export default Invoices;

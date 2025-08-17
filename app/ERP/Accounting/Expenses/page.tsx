@@ -351,7 +351,7 @@ const Expenses = () => {
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
 
   return (
-    <ERP>
+    <>
 
 
 
@@ -762,7 +762,7 @@ const Expenses = () => {
           </div>
         )}
       </div>
-    </ERP>
+    </>
   );
 };
 
