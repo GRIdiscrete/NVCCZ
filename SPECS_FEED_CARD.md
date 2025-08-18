@@ -1,0 +1,25 @@
+# Feed Card Specification
+
+- **Container**: rounded-2xl, 1px border, backdrop blur, hover border highlight
+- **Image Variant**:
+  - Media: 48vh cap, object-cover
+  - Top-left source icon (non-interactive)
+  - Content: 16px padding
+  - Meta: region pill (xs), date (xs)
+  - Title: lg, 2-line clamp
+  - Snippet: sm, 3-line clamp
+  - Action: Read More link with aria-label `Read more: {title}`
+- **Text Variant**:
+  - Decorative gradient strip by region
+  - Content: 24px padding
+  - Title: xl/bold, 2-line clamp
+  - Snippet: sm/relaxed, 4-line clamp
+  - Footer: source avatar icon + author, action chip right
+- **Accessibility**:
+  - Article role via semantic `<article>`
+  - Links have explicit aria-labels
+  - Focus-visible ring on interactive elements
+- **Responsive**:
+  - Mobile: 1-col
+  - Tablet: 2-col
+  - Desktop: 3-col

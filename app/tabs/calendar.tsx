@@ -54,26 +54,26 @@ const filteredEvents = events.data.filter(event => {
       const isSelected = selectedDate && isSameDay(day, selectedDate);
 
       return (
-        <motion.div
+        <motion.button
           key={i}
+          type="button"
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
-          className={`p-2 h-24 border border-gray-700 overflow-hidden cursor-pointer transition-colors 
-            ${isCurrentMonth ? 'bg-gray-800/30' : 'bg-gray-900/20 text-gray-500'} 
-            ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+          className={`h-24 cursor-pointer overflow-hidden border border-input p-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-ring/40
+            ${isCurrentMonth ? 'bg-card/60' : 'bg-muted/40 text-muted-foreground'} 
+            ${isSelected ? 'ring-2 ring-primary' : ''}`}
           onClick={() => setSelectedDate(day)}
+          aria-pressed={!!isSelected}
+          aria-current={isSelected ? 'date' : undefined}
+          aria-label={`Select ${format(day, 'EEEE do MMMM')}${dayEvents.length ? `, ${dayEvents.length} event(s)` : ''}`}
         >
-          <div className="flex justify-between items-start">
-            <span className={`text-sm ${isSelected ? 'font-bold text-white' : ''}`}>
-              {format(day, 'd')}
-            </span>
-            {dayEvents.length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            )}
+          <div className="flex items-start justify-between">
+            <span className={`text-sm ${isSelected ? 'font-bold text-white' : ''}`}>{format(day, 'd')}</span>
+            {dayEvents.length > 0 && <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />}
           </div>
-          <div className="mt-1 space-y-1 max-h-16 overflow-y-auto">
+          <div className="mt-1 max-h-16 space-y-1 overflow-y-auto">
             {dayEvents.slice(0, 2).map(event => (
-              <div key={event.id} className="text-xs p-1 rounded bg-blue-900/30 truncate">
+              <div key={event.id} className="truncate rounded bg-blue-900/30 p-1 text-xs">
                 {event.title}
               </div>
             ))}
@@ -81,23 +81,23 @@ const filteredEvents = events.data.filter(event => {
               <div className="text-xs text-gray-400">+{dayEvents.length - 2} more</div>
             )}
           </div>
-        </motion.div>
+        </motion.button>
       );
     });
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
+    <div className="w-full h-full p-0">
       {/* Header with search and filters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold text-white">Company Events</h2>
+          <h2 className="text-2xl font-bold text-foreground">Company Events</h2>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search events..."
-              className="pl-10 pr-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10 pr-4 py-2 rounded-lg bg-background/70 border border-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -106,7 +106,7 @@ const filteredEvents = events.data.filter(event => {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => setFilterActive(!filterActive)}
-            className={`flex items-center px-4 py-2 rounded-lg border ${filterActive ? 'bg-blue-900/30 border-blue-500 text-blue-300' : 'bg-gray-800/50 border-gray-700 text-gray-300'}`}
+            className={`flex items-center px-4 py-2 rounded-lg border transition-colors ${filterActive ? 'bg-primary/10 border-primary text-primary' : 'bg-card/70 border-input text-foreground'}`}
           >
             <Filter className="w-4 h-4 mr-2" />
             Active Only
@@ -115,28 +115,38 @@ const filteredEvents = events.data.filter(event => {
       </div>
 
       {/* Calendar controls */}
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <h3 className="text-xl font-semibold text-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+            className="p-2 rounded-lg border border-input bg-card/70 hover:bg-accent transition-colors"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => { const today = new Date(); setCurrentMonth(today); setSelectedDate(today); }}
+            className="px-3 py-2 rounded-lg border border-input bg-card/70 text-sm hover:bg-accent transition-colors"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+            className="p-2 rounded-lg border border-input bg-card/70 hover:bg-accent transition-colors"
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+        <h3 className="text-xl font-semibold text-foreground" aria-live="polite">
           {format(currentMonth, 'MMMM yyyy')}
         </h3>
-        <button
-          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-px bg-gray-700 rounded-lg overflow-hidden mb-6">
+      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden mb-6 bg-border">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="p-2 bg-gray-800 text-center text-gray-300 font-medium">
+          <div key={day} className="p-2 bg-card text-center text-foreground/80 font-medium">
             {day}
           </div>
         ))}
@@ -148,9 +158,9 @@ const filteredEvents = events.data.filter(event => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800/50 rounded-xl p-6 border border-gray-700"
+          className="rounded-xl p-6 border border-input bg-card/80 backdrop-blur"
         >
-          <h3 className="text-xl font-bold text-white mb-4">
+          <h3 className="text-xl font-bold text-foreground mb-4">
             Events on {format(selectedDate, 'MMMM do, yyyy')}
           </h3>
           
@@ -160,31 +170,31 @@ const filteredEvents = events.data.filter(event => {
                 <motion.div
                   key={event.id}
                   whileHover={{ scale: 1.01 }}
-                  className="p-4 rounded-lg bg-gray-800/30 border border-gray-700"
+                  className="p-4 rounded-lg bg-card/60 border border-input"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-lg font-semibold text-white">{event.title}</h4>
+                    <h4 className="text-lg font-semibold text-foreground">{event.title}</h4>
                     {event.isActive ? (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-900/30 text-green-300">
+                      <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-600">
                         Active
                       </span>
                     ) : (
-                      <span className="text-xs px-2 py-1 rounded-full bg-red-900/30 text-red-300">
+                      <span className="text-xs px-2 py-1 rounded-full bg-rose-500/10 text-rose-600">
                         Inactive
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-300 mb-3">{event.description}</p>
+                  <p className="text-muted-foreground mb-3">{event.description}</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-muted-foreground">
                       <Clock className="w-4 h-4 mr-2" />
                       {format(parseISO(event.startDate), 'h:mm a')} - {format(parseISO(event.endDate), 'h:mm a')}
                     </div>
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-muted-foreground">
                       <MapPin className="w-4 h-4 mr-2" />
                       {event.location}
                     </div>
-                    <div className="flex items-center text-gray-400">
+                    <div className="flex items-center text-muted-foreground">
                       <User className="w-4 h-4 mr-2" />
                       {event.author.firstName} {event.author.lastName}
                     </div>
@@ -193,7 +203,7 @@ const filteredEvents = events.data.filter(event => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-400">No events scheduled for this day</p>
+            <p className="text-muted-foreground">No events scheduled for this day</p>
           )}
         </motion.div>
       )}

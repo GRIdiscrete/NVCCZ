@@ -2,10 +2,15 @@
 
 import { motion } from 'framer-motion';
 import { Lock, Mail } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ChatbotProvider } from '@/components/chatbot';
+
+
+// Poppins in globals.css:
+// @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+// html, body { font-family: 'Poppins', sans-serif; }
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -22,28 +27,20 @@ const LoginPage = () => {
     try {
       const response = await fetch('https://nvccz-pi.vercel.app/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Save token and user ID to session storage
         sessionStorage.setItem('token', data.token);
         sessionStorage.setItem('userID', data.user.id);
-        
-        // Redirect to home page
         router.push('/');
       } else {
         setError(data.message || 'Login failed');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during login');
     } finally {
       setLoading(false);
@@ -51,164 +48,181 @@ const LoginPage = () => {
   };
 
   return (
-    <ChatbotProvider position="bottom-left">
-      <div 
-        className="flex items-center justify-center min-h-screen p-4"
-        style={{ 
-          background: `
-            radial-gradient(ellipse at top left, rgba(29, 78, 216, 0.15) 0%, transparent 50%),
-            radial-gradient(ellipse at bottom right, rgba(30, 58, 138, 0.25) 0%, transparent 50%),
-            linear-gradient(to bottom right, #0f172a, #1e293b, #1e3a8a)
-          `,
-          backgroundAttachment: 'fixed'
-        }}
-      >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
-        <div 
-          className="p-8 rounded-xl shadow-2xl"
-          style={{
-            backgroundColor: 'rgba(30, 41, 59, 0.7)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(55, 65, 81, 0.4)'
-          }}
+    <>
+      {/* ===== Background Layer ===== */}
+      <div className="relative min-h-screen overflow-hidden">
+        {/* Background image with subtle zoom/fade (Ken Burns) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+          className="absolute inset-0 -z-10"
         >
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome!</h1>
-            <p className="text-gray-300">Sign in to your NVCCZ account</p>
-          </div>
+          <Image
+            src="/login/bg-login.png"  // ← update extension if needed
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        </motion.div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-900/30 text-red-300 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+        {/* Blue/Gray gradient overlay with slow ambient movement */}
+        <motion.div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.9 }}
+          transition={{ duration: 0.8 }}
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(0,86,164,0.45), rgba(203,213,225,0.55))',
+          }}
+        />
+        <div className="absolute inset-0 -z-10 pointer-events-none animate-slow-shift"
+             style={{
+               background:
+                 'radial-gradient(1200px 600px at 80% 20%, rgba(0,86,164,0.18), transparent 60%), radial-gradient(1000px 500px at 10% 90%, rgba(148,163,184,0.22), transparent 60%)'
+             }}
+        />
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <motion.div 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="block w-full pl-10 pr-3 py-3 rounded-lg bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="block w-full pl-10 pr-3 py-3 rounded-lg bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded bg-gray-800/50 border-gray-700 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <Link href="/forgot-password" className="font-medium text-blue-400 hover:text-blue-300">
-                  Forgot password?
-                </Link>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full flex justify-center py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </motion.div>
-          </form>
-
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-6 text-center"
+        {/* ===== Content Layer ===== */}
+        <div className="flex items-center justify-center min-h-screen p-4 font-poppins">
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="w-full max-w-md"
           >
-            <p className="text-sm text-gray-400">
-              Don't have an account?{' '}
-              <Link href="/register" className="font-medium text-blue-400 hover:text-blue-300">
-                Sign up
-              </Link>
-            </p>
+            <div
+              className="p-8 rounded-2xl shadow-xl backdrop-blur-md"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.92)',
+                border: '1px solid rgba(0,0,0,0.08)',
+              }}
+            >
+              <div className="text-center mb-8">
+                <h1 className="text-4xl font-light text-black mb-2 tracking-wide">
+                  Welcome
+                </h1>
+                <p className="text-lg text-gray-700">
+                  Sign in to your NVCCZ account
+                </p>
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 p-3 bg-gray-200 text-gray-800 rounded-lg text-base"
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {/* Email */}
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+                  <label htmlFor="email" className="block text-lg font-light text-black mb-1">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      className="block w-full pl-10 pr-3 py-3 rounded-lg bg-gray-100 border border-gray-400 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0056A4] focus:border-transparent transition"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Password */}
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}>
+                  <label htmlFor="password" className="block text-lg font-light text-black mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      className="block w-full pl-10 pr-3 py-3 rounded-lg bg-gray-100 border border-gray-400 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0056A4] focus:border-transparent transition"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Remember + Forgot */}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="flex items-center justify-between">
+                  <label className="flex items-center gap-2">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      className="h-4 w-4 rounded bg-gray-200 border-gray-500 text-[#0056A4] focus:ring-[#0056A4]"
+                    />
+                    <span className="text-base text-gray-700">Remember me</span>
+                  </label>
+                  <div className="text-base">
+                    <Link href="/forgot-password" className="font-medium text-[#0056A4] hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                </motion.div>
+
+                {/* Button */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`w-full flex justify-center py-3 px-4 rounded-lg shadow-md text-lg font-semibold text-white bg-[#0056A4] hover:bg-[#064f94] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0056A4] transition-colors duration-300 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {loading ? 'Signing in...' : 'Sign in'}
+                  </button>
+                </motion.div>
+              </form>
+
+              {/* Signup link */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="mt-6 text-center">
+                <p className="text-lg text-gray-700">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/auth/register" className="font-medium text-[#0056A4] hover:underline">
+                    Sign up
+                  </Link>
+                </p>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
-      </motion.div>
-    </div>
-    </ChatbotProvider>
+
+        {/* Local styles for background animation */}
+        <style jsx>{`
+          @keyframes slowShift {
+            0%   { transform: translate3d(0,0,0); }
+            50%  { transform: translate3d(-1.5%, -1.5%, 0); }
+            100% { transform: translate3d(0,0,0); }
+          }
+          .animate-slow-shift {
+            animation: slowShift 18s ease-in-out infinite;
+          }
+        `}</style>
+      </div>
+    </>
   );
-}
+};
 
 export default LoginPage;

@@ -391,39 +391,34 @@ const NewsletterCarousel = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Newsletters</h1>
         {!userLoading && isAdmin && (
-        <button
-        type="submit"
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center justify-center min-w-[120px]"
-        disabled={isCreating}
-      >
-        {isCreating ? (
-          <>
-            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Creating...
-          </>
-        ) : 'Create Newsletter'}
-      </button>
+          <button
+            type="button"
+            onClick={() => setShowCreateForm((v) => !v)}
+            className="min-w-[120px] flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            aria-expanded={showCreateForm}
+            aria-controls="create-newsletter"
+          >
+            {showCreateForm ? 'Close' : 'Create Newsletter'}
+          </button>
         )}
       </div>
 
       {showCreateForm && (
         <motion.div
+          id="create-newsletter"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 p-6 rounded-xl"
+          className="mb-8 rounded-xl p-6"
           style={{
             backgroundColor: 'rgba(30, 41, 59, 0.7)',
             backdropFilter: 'blur(12px)',
             border: '1px solid rgba(55, 65, 81, 0.4)'
           }}
         >
-          <h2 className="text-xl font-bold text-white mb-4">Create New Newsletter</h2>
+          <h2 className="mb-4 text-xl font-bold text-white">Create New Newsletter</h2>
           <form onSubmit={handleCreateNewsletter} className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
+              <label htmlFor="title" className="mb-1 block text-sm font-medium text-gray-300">
                 Title
               </label>
               <input
@@ -433,12 +428,12 @@ const NewsletterCarousel = () => {
                 value={formData.title}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-1">
+              <label htmlFor="content" className="mb-1 block text-sm font-medium text-gray-300">
                 Content
               </label>
               <textarea
@@ -448,16 +443,16 @@ const NewsletterCarousel = () => {
                 onChange={handleInputChange}
                 required
                 rows={6}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label htmlFor="image" className="block text-sm font-medium text-gray-300 mb-1">
+              <label htmlFor="image" className="mb-1 block text-sm font-medium text-gray-300">
                 Image
               </label>
               <div className="flex items-center gap-4">
-                <label className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-gray-300 px-4 py-2 rounded-md transition-colors">
+                <label className="cursor-pointer rounded-md bg-gray-700 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-600">
                   <input
                     type="file"
                     id="image"
@@ -467,19 +462,19 @@ const NewsletterCarousel = () => {
                     className="hidden"
                   />
                   <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" />
+                    <ImageIcon className="h-4 w-4" />
                     Choose Image
                   </div>
                 </label>
                 {imagePreview && (
-                  <div 
-                    className="relative w-20 h-20 rounded-md overflow-hidden border border-gray-600 cursor-pointer"
+                  <div
+                    className="relative h-20 w-20 cursor-pointer overflow-hidden rounded-md border border-gray-600"
                     onClick={() => handleImageClick(imagePreview)}
                   >
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full h-full object-cover"
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
                     />
                   </div>
                 )}
@@ -493,15 +488,16 @@ const NewsletterCarousel = () => {
                   setShowCreateForm(false);
                   setImagePreview(null);
                 }}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+                className="rounded-md bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                className="rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+                disabled={isCreating}
               >
-                Create Newsletter
+                {isCreating ? 'Creating…' : 'Create Newsletter'}
               </button>
             </div>
           </form>

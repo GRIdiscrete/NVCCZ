@@ -11,10 +11,17 @@ import Posts from "./tabs/posts";
 import EventsCalendar from "./tabs/calendar";
 import NewsletterCarousel from "./tabs/newsletter";
 import FeedPage from "./tabs/feeds";
-import Dashboard from "./tabs/dashboard";
+import HeroClient from "./HeroClient";
 import { ChatbotProvider } from "@/components/chatbot";
 import HomepageSidebar from "@/components/HomepageSidebar";
 import SocialMediaLinks from "@/components/mediapages/SocialMediaLinks";
+import Layout from "@/components/layout/Layout";
+import { X, Info } from "lucide-react";
+import HeroCarousel from "@/components/hero/HeroCarousel";
+import FeedsTab from "./tabs/feeds";
+import CalendarTab from "./tabs/calendar";
+import NewsletterTab from "./tabs/newsletter";
+import PostsTab from "./tabs/posts";
 
 export default function Home() {
   const [showWelcome, setShowWelcome] = useState(true);
@@ -102,167 +109,102 @@ export default function Home() {
     }
   };
 
-  return (
-    <ChatbotProvider position="bottom-right">
-      <div className="flex min-h-screen bg-slate-700">
-        {/* Sidebar */}
-        <HomepageSidebar />
+  // Assuming TabsDemo is a component that uses the Tabs and TabsContent, TabsList, TabsTrigger components
+  // and renders the actual content based on the currentTab. For this example, we'll create a placeholder.
+  const TabsDemo = () => (
+    <div className="text-foreground">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentTab}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={contentVariants}
+        >
+          {currentTab === "feed" && (
+            <TabsContent value="feed">
+              <FeedPage />
+            </TabsContent>
+          )}
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-hidden relative">
-          {/* Right Social Media Links - Fixed Position */}
-          <SocialMediaLinks />
-          
-          {/* Welcome Splash Screen */}
-          <AnimatePresence mode="wait">
-            {showWelcome && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 flex items-center justify-center z-50"
-                style={{
-                  background: `radial-gradient(ellipse at center, rgba(59, 130, 246, 0.4) 0%, rgba(51, 65, 85, 1) 100%)`,
-                }}
-              >
-                <motion.div 
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="text-center"
-                >
-                  <motion.h1 
-                    className="text-5xl font-bold text-white mb-4"
-                    initial={{ y: 20 }}
-                    animate={{ y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    Welcome to NVCCZ
-                  </motion.h1>
-                  <motion.p 
-                    className="text-xl text-blue-200"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                  >
-                    Loading your experience...
-                  </motion.p>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {currentTab === "newsletter" && (
+            <TabsContent value="newsletter">
+              <NewsletterCarousel />
+            </TabsContent>
+          )}
 
-          {/* Main Content */}
-          <div 
-            className={`flex flex-col items-center justify-start min-h-screen p-4 transition-opacity duration-1000 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
-            style={{ 
-              background: `
-                radial-gradient(ellipse at top left, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
-                radial-gradient(ellipse at bottom right, rgba(79, 70, 229, 0.3) 0%, transparent 50%),
-                linear-gradient(to bottom right, #334155, #475569, #3b82f6)
-              `,
-              backgroundAttachment: 'fixed'
-            }}
-          >
-            {/* Top-right controls (sticky) */}
-            <div className="w-full sticky top-4 z-40 flex items-center justify-end gap-3">
-              <div className="rounded-xl border border-slate-700/50 bg-[rgba(30,41,59,0.6)] backdrop-blur px-3 py-2 shadow-xl flex items-center gap-3">
-                <div className="h-5 w-px bg-slate-600/60" />
-                <ProfileMenu />
-              </div>
-            </div>
-            
-            <Tabs 
-              defaultValue="feed" 
-              className="w-[95%] max-w-none"
-              onValueChange={(value) => setCurrentTab(value)}
-            >
-              <TabsList 
-                className="grid w-full grid-cols-5 gap-2 p-2 rounded-xl mb-8" 
-                style={{
-                  backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                  border: '1px solid rgba(55, 65, 81, 0.5)',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                  backdropFilter: 'blur(8px)'
-                }}
-              >
-                {['feed', 'dashboard', 'newsletter', 'forum', 'calendar'].map((tabValue) => (
-                  <TabsTrigger key={tabValue} value={tabValue} asChild>
-                    <motion.button
-                      className="relative overflow-hidden rounded-lg px-6 py-3 text-sm font-medium group w-full"
-                      variants={tabVariants}
-                      initial="inactive"
-                      animate={currentTab === tabValue ? "active" : "inactive"}
-                      whileHover="hover"
-                      style={{
-                        color: '#d1d5db',
-                        backgroundColor: 'transparent'
-                      }}
-                    >
-                      <span className="relative z-10 capitalize">{tabValue}</span>
-                      <span 
-                        className="absolute inset-0 opacity-0 rounded-lg transition-opacity duration-300 group-data-[state=active]:opacity-100" 
-                        style={{
-                          background: 'linear-gradient(to right, #1e3a8a, #3b82f6)'
-                        }}
-                      />
-                    </motion.button>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              
-              <div 
-                className="p-6 rounded-xl shadow-xl relative min-h-[300px]"
-                style={{
-                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(55, 65, 81, 0.4)'
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentTab}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    variants={contentVariants}
-                  >
-                    {currentTab === "feed" && (
-                      <TabsContent value="feed" className="text-gray-300">
-                        <FeedPage />
-                      </TabsContent>
-                    )}
-                    
-                    {currentTab === "dashboard" && (
+          {currentTab === "forum" && (
+            <TabsContent value="forum">
+              <Posts />
+            </TabsContent>
+          )}
+
+          {currentTab === "calendar" && (
+            <TabsContent value="calendar">
+              <EventsCalendar events={eventsData} />
+            </TabsContent>
+          )}
+          {currentTab === "dashboard" && (
                       <TabsContent value="dashboard" className="text-gray-300">
                         <Dashboard />
                       </TabsContent>
                     )}
                     
-                    {currentTab === "newsletter" && (
-                      <TabsContent value="newsletter" className="text-gray-300">
-                        <NewsletterCarousel />
-                      </TabsContent>
-                    )}
-                    
-                    {currentTab === "forum" && (
-                      <TabsContent value="forum" className="text-gray-300">
-                        <Posts />
-                      </TabsContent>
-                    )}
-                    
-                    {currentTab === "calendar" && (
-                      <TabsContent value="calendar" className="text-gray-300">
-                        <EventsCalendar events={eventsData} />
-                      </TabsContent>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+
+
+  return (
+    <Layout>
+      <ChatbotProvider position="bottom-right">
+      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <HomepageSidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-auto">
+            <main className="p-6">
+              <div className="space-y-6">
+                <HeroClient />
+                <Tabs 
+                  defaultValue="feed" 
+                  className="w-[95%] max-w-none"
+                  onValueChange={(value) => setCurrentTab(value)}
+                >
+                  <TabsList 
+                    className="mb-8 grid w-full grid-cols-4 gap-2 rounded-xl border border-input bg-card p-2 shadow-lg backdrop-blur"
+                  >
+                    {['feed','dashboard' 'newsletter', 'forum', 'calendar'].map((tabValue) => (
+                      <TabsTrigger key={tabValue} value={tabValue} asChild>
+                        <motion.button
+                          className="group relative w-full overflow-hidden rounded-lg px-6 py-3 text-base font-semibold text-muted-foreground data-[state=active]:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors"
+                          variants={tabVariants}
+                          initial="inactive"
+                          animate={currentTab === tabValue ? 'active' : 'inactive'}
+                          whileHover="hover"
+                        >
+                          <span className="relative z-10 capitalize">{tabValue}</span>
+                          <span
+                            className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 group-data-[state=active]:opacity-100 bg-gradient-to-r from-chart-2/30 via-primary/50 to-primary/80"
+                          />
+                          <span className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-border data-[state=active]:ring-primary/40" />
+                        </motion.button>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  <div 
+                    className="relative min-h-[300px] w-full rounded-xl border p-6 shadow-xl bg-card/95 backdrop-blur"
+                  >
+                    <TabsDemo />
+                  </div>
+                </Tabs>
               </div>
-            </Tabs>
+            </main>
           </div>
         </div>
       </div>
-    </ChatbotProvider>
+      </ChatbotProvider>
+    </Layout>
   );
 }

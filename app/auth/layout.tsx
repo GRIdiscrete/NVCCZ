@@ -1,28 +1,28 @@
+
 import type { Metadata } from "next";
 import { Poppins, Noto_Sans } from "next/font/google";
-import "./globals.css";
-import "./theme-blue.css"; // premium blue theme tokens
+import "../globals.css";
+import "../theme-blue.css";
 import type { ReactNode } from "react";
-import { ChatbotProvider } from "@/components/chatbot";
 
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700"],
-  variable: "--font-sans", // default app font
+  variable: "--font-sans",
 });
 
 const notoSans = Noto_Sans({
   subsets: ["latin"],
   weight: ["100", "900"],
-  variable: "--font-noto", // optional secondary font
+  variable: "--font-noto",
 });
 
 export const metadata: Metadata = {
-  title: "NVCCZ",
-  description: "Financial intelligence and feeds",
+  title: "NVCCZ - Authentication",
+  description: "Sign in to your NVCCZ account",
 };
 
-export default function RootLayout({
+export default function AuthLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
@@ -35,9 +35,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0b1220" />
       </head>
       <body className="font-sans antialiased">
-       
-          {children}
-        
+        {children}
       </body>
     </html>
   );

@@ -189,6 +189,7 @@ const FeedPage = () => {
 
   const [selectedCategory, setSelectedCategory] = useState("zimbabwean");
   const [searchTerm, setSearchTerm] = useState("");
+  const [visibleCount, setVisibleCount] = useState(12); // infinite-scroll placeholder
 
   useEffect(() => setMounted(true), []);
 
@@ -276,25 +277,26 @@ const FeedPage = () => {
   const rates = getRatesData();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-white via-white to-white">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-input bg-card/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-600 to-indigo-600 shadow-md" />
               <div>
-                <h1 className="text-sm font-semibold tracking-tight text-white sm:text-base">
+                <h1 className="text-lg font-medium tracking-tight text-foreground sm:text-base">
                   NVCCZ Financial Feeds
                 </h1>
-                <p className="text-[11px] text-slate-400">Curated informatics • live rates</p>
+                <p className="text-[11px] text-muted-foreground">Curated informatics • live rates</p>
               </div>
             </div>
             <button
               onClick={refresh}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-200 shadow-sm transition-colors hover:border-sky-500 hover:bg-slate-800"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-input bg-slate-300 px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/50"
             >
-              <RefreshCw size={14} className="" /> Refresh
+              <RefreshCw size={16} />
+              Refresh
             </button>
           </div>
         </div>
@@ -302,7 +304,7 @@ const FeedPage = () => {
 
       {/* RBZ + Summary modules */}
       <section className="mx-auto max-w-7xl px-2 py-2 sm:px-3">
-        <div className="mb-2"><FloatingRBZData /></div>
+        {/* <div className="mb-2"><FloatingRBZData /></div> */}
         <div className="mb-2"><ZimFinancialData /></div>
       </section>
 
@@ -316,7 +318,7 @@ const FeedPage = () => {
             cryptoLoading={cryptoLoading}
             forexLoading={forexLoading}
           />
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-800/60 p-3 shadow-[0_8px_30px_rgba(2,6,23,0.35)] backdrop-blur-xl">
+          <div className="rounded-2xl border border-input bg-card/80 p-3 shadow-sm backdrop-blur">
             <WeatherCard />
           </div>
           {/* Optional: bank rates card */}
@@ -326,7 +328,7 @@ const FeedPage = () => {
         {/* Content */}
         <section className="order-1 lg:order-2 lg:col-span-3 xl:col-span-4">
           {/* Search & Filters */}
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-800/60 p-3 shadow-[0_8px_30px_rgba(2,6,23,0.35)] backdrop-blur-xl">
+          <div className="rounded-2xl border border-input bg-card/80 p-3 shadow-sm backdrop-blur">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -335,10 +337,10 @@ const FeedPage = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   type="text"
                   placeholder="Search financial news…"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/40 py-2 pl-9 pr-3 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+                  className="w-full rounded-xl border border-input bg-background/60 py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Filter size={16} /> Filter
               </div>
             </div>
@@ -370,21 +372,21 @@ const FeedPage = () => {
 
           {/* Count */}
           <div className="mb-2 mt-3">
-            <h2 className="text-sm font-semibold tracking-tight text-slate-200">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
               Latest News <span className="text-slate-400">({filteredFeeds.length} articles)</span>
             </h2>
           </div>
 
           {/* Feed grid */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {filteredFeeds.map((feed, idx) => (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-live="polite" aria-busy={feedsLoading}>
+            {filteredFeeds.slice(0, visibleCount).map((feed, idx) => (
               <motion.div
                 key={feed.guid || idx}
                 initial={{ y: 10, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
-                className="[--x:50%] [--y:50%] group relative overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-800/60 p-2 shadow-[0_8px_30px_rgba(2,6,23,0.35)] backdrop-blur-xl transition-all hover:border-sky-500/60 hover:shadow-[0_18px_50px_rgba(2,6,23,0.45)]"
+                className="[--x:50%] [--y:50%] group relative overflow-hidden rounded-2xl border border-input bg-card/80 p-2 shadow-sm backdrop-blur transition-all hover:border-primary/50"
               >
                 <FeedCard feed={feed} />
                 {/* hover shimmer */}
@@ -393,12 +395,24 @@ const FeedPage = () => {
             ))}
           </div>
 
+          {/* Load more fallback */}
+          {visibleCount < filteredFeeds.length && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setVisibleCount((c) => c + 9)}
+                className="rounded-md border border-input bg-card/80 px-4 py-2 text-sm text-foreground hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                Load more
+              </button>
+            </div>
+          )}
+
           {/* Empty state */}
           {filteredFeeds.length === 0 && !feedsLoading && (
             <div className="grid place-items-center py-10 text-center">
-              <Newspaper className="mb-3 h-14 w-14 text-slate-500" />
-              <h3 className="text-base font-medium text-slate-300">No articles found</h3>
-              <p className="text-sm text-slate-500">Try adjusting your search terms or filters</p>
+              <Newspaper className="mb-3 h-14 w-14 text-muted-foreground" />
+              <h3 className="text-base font-medium text-foreground">No articles found</h3>
+              <p className="text-sm text-muted-foreground">Try adjusting your search terms or filters</p>
             </div>
           )}
         </section>

@@ -121,7 +121,7 @@ const ZimFinancialData = () => {
     {
       id: 'tradingview-african',
       title: 'African Markets',
-      fullTitle: 'TradingView African Markets',
+      fullTitle: 'African Markets',
       icon: BarChart3,
       description: 'African markets and regional indices',
       color: 'from-orange-600 to-orange-800',
@@ -131,7 +131,7 @@ const ZimFinancialData = () => {
     {
       id: 'tradingview-global',
       title: 'Global Markets',
-      fullTitle: 'TradingView Global Indices',
+      fullTitle: 'Global Indices',
       icon: Globe,
       description: 'International markets and global indices',
       color: 'from-purple-600 to-purple-800',
@@ -141,21 +141,18 @@ const ZimFinancialData = () => {
   ];
 
   return (
-    <div className=" bg-gray-900">
-      {/* Header */}
-      <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700">
-      </header>
+    <div className=" bg-white-300 rounded-2xl">
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 text-center">
+      <div className="max-w-6xl mx-auto sm:px-6 lg:px-8 py-8">
+        {/* <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Financial Data Sources</h2>
           <p className="text-gray-400">Hover over any section to view financial information</p>
-        </div>
+        </div> */}
 
         {/* Inline Menu */}
         <div className="relative">
-          <div className="flex flex-wrap gap-2 mb-4 justify-center">
+          <div className="flex flex-wrap gap-4 mb-4 justify-center">
             {menuItems.map((item) => {
               const IconComponent = item.icon;
               const isHovered = hoveredSection === item.id;
@@ -169,8 +166,8 @@ const ZimFinancialData = () => {
                 >
                   <div
                     className={`
-                      flex items-center space-x-2 px-4 py-3 rounded-lg border border-gray-700
-                      bg-gray-800/50 backdrop-blur-sm cursor-pointer transition-all duration-200
+                      flex items-center space-x-2 px-4 py-3 rounded-lg border border-gray-300
+                      bg-slate-50 backdrop-blur-sm cursor-pointer transition-all duration-200
                       ${item.hoverBg} hover:border-gray-600 hover:shadow-lg
                       ${isHovered ? 'transform scale-105 shadow-xl' : ''}
                     `}
@@ -178,9 +175,9 @@ const ZimFinancialData = () => {
                     <div className={`w-6 h-6 bg-gradient-to-br ${item.color} rounded flex items-center justify-center`}>
                       <IconComponent className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-white font-medium text-sm">{item.title}</span>
+                    <span className="text-black-200 font-medium text-sm">{item.title}</span>
                     <ChevronDown 
-                      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                      className={`w-4 h-4 text-black transition-transform duration-200 ${
                         isHovered ? 'rotate-180' : ''
                       }`} 
                     />
@@ -197,7 +194,7 @@ const ZimFinancialData = () => {
               onMouseEnter={handleDropdownEnter}
               onMouseLeave={handleDropdownLeave}
             >
-              <div className="bg-gray-800/90 backdrop-blur-md rounded-xl border border-gray-600 shadow-2xl overflow-hidden">
+              <div className="bg-white backdrop-blur-md rounded-xl border border-slate-200 shadow-2xl overflow-hidden">
                 {(() => {
                   const activeItem = menuItems.find(item => item.id === hoveredSection);
                   if (!activeItem) return null;
@@ -211,15 +208,15 @@ const ZimFinancialData = () => {
                           <IconComponent className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-white">{activeItem.fullTitle}</h3>
-                          <p className="text-gray-400">{activeItem.description}</p>
+                          <h3 className="text-xl font-bold text-black-200">{activeItem.fullTitle}</h3>
+                          <p className="text-black-100 font-poppins ">{activeItem.description}</p>
                         </div>
                       </div>
                       
                       {/* ZSE Specific Content */}
                       {hoveredSection === 'zse' ? (
                         <div className="space-y-4">
-                          <h4 className="text-lg font-semibold text-white mb-3">Available Data Categories</h4>
+                          <h4 className="text-lg font-semibold text-black-200 mb-3">Available Data Categories</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             {zseMenuItems.map((zseItem) => {
                               const ZseIconComponent = zseItem.icon;
@@ -227,13 +224,13 @@ const ZimFinancialData = () => {
                                 <button
                                   key={zseItem.id}
                                   onClick={() => openModal(zseItem.id)}
-                                  className="flex items-center space-x-3 p-4 bg-gray-700/50 hover:bg-gray-700/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
+                                  className="flex items-center space-x-3 p-4 bg-slate-100 hover:bg-gray-400/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
                                 >
-                                  <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center group-hover:bg-gray-500 transition-colors">
+                                  <div className="w-8 h-8 bg-white-100 rounded-lg flex items-center justify-center group-hover:bg-gray-500 transition-colors">
                                     <ZseIconComponent className={`w-4 h-4 ${zseItem.color}`} />
                                   </div>
                                   <div className="text-left">
-                                    <div className="text-white font-medium text-sm">{zseItem.title}</div>
+                                    <div className="text-black font-medium text-sm">{zseItem.title}</div>
                                   </div>
                                 </button>
                               );
@@ -241,8 +238,8 @@ const ZimFinancialData = () => {
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-700">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-400">Click any category to view detailed data</span>
-                              <button className="px-3 py-1 rounded text-sm font-medium text-green-400 bg-gray-700 hover:bg-gray-600 transition-colors">
+                              <span className="text-sm text-black-100">Click any category to view detailed data</span>
+                              <button className="px-3 py-1 rounded text-sm font-medium text-black bg-slate-100 hover:bg-gray-600 transition-colors">
                                 View All
                               </button>
                             </div>
@@ -259,13 +256,13 @@ const ZimFinancialData = () => {
                                 <button
                                   key={rbzItem.id}
                                   onClick={() => openModal(rbzItem.id)}
-                                  className="flex items-center space-x-3 p-4 bg-gray-700/50 hover:bg-gray-700/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
+                                  className="flex items-center space-x-3 p-4 bg-slate-100 hover:bg-gray-400/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
                                 >
                                   <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center group-hover:bg-gray-500 transition-colors">
                                     <RbzIconComponent className={`w-4 h-4 ${rbzItem.color}`} />
                                   </div>
                                   <div className="text-left">
-                                    <div className="text-white font-medium text-sm">{rbzItem.title}</div>
+                                    <div className="text-black font-medium text-sm">{rbzItem.title}</div>
                                   </div>
                                 </button>
                               );
@@ -273,8 +270,8 @@ const ZimFinancialData = () => {
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-700">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-400">Click to view RBZ banking data</span>
-                              <button className="px-3 py-1 rounded text-sm font-medium text-blue-400 bg-gray-700 hover:bg-gray-600 transition-colors">
+                              <span className="text-sm text-black-100">Click to view RBZ banking data</span>
+                              <button className="px-4 py-2 rounded-sm text-sm font-medium text-black bg-slate-100 hover:bg-slate-100/50 transition-colors">
                                 View All
                               </button>
                             </div>
@@ -291,13 +288,13 @@ const ZimFinancialData = () => {
                                 <button
                                   key={tvItem.id}
                                   onClick={() => openModal(tvItem.id)}
-                                  className="flex items-center space-x-3 p-4 bg-gray-700/50 hover:bg-gray-700/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
+                                  className="flex items-center space-x-3 p-4 bg-slate-100 hover:bg-gray-400/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
                                 >
                                   <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center group-hover:bg-gray-500 transition-colors">
                                     <TvIconComponent className={`w-4 h-4 ${tvItem.color}`} />
                                   </div>
                                   <div className="text-left">
-                                    <div className="text-white font-medium text-sm">{tvItem.title}</div>
+                                    <div className="text-black font-medium text-sm">{tvItem.title}</div>
                                   </div>
                                 </button>
                               );
@@ -305,8 +302,8 @@ const ZimFinancialData = () => {
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-700">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-400">Click to view African market data</span>
-                              <button className="px-3 py-1 rounded text-sm font-medium text-orange-400 bg-gray-700 hover:bg-gray-600 transition-colors">
+                              <span className="text-sm text-black-100">Click to view African market data</span>
+                              <button className="px-3 py-1 rounded text-sm font-medium text-black-100 bg-slate-100 hover:bg-gray-600 transition-colors">
                                 View All
                               </button>
                             </div>
@@ -323,13 +320,13 @@ const ZimFinancialData = () => {
                                 <button
                                   key={tvGlobalItem.id}
                                   onClick={() => openModal(tvGlobalItem.id)}
-                                  className="flex items-center space-x-3 p-4 bg-gray-700/50 hover:bg-gray-700/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
+                                  className="flex items-center space-x-3 p-4 bg-slate-100 hover:bg-gray-400/80 rounded-lg transition-all duration-200 hover:scale-[1.02] group"
                                 >
                                   <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center group-hover:bg-gray-500 transition-colors">
                                     <TvGlobalIconComponent className={`w-4 h-4 ${tvGlobalItem.color}`} />
                                   </div>
                                   <div className="text-left">
-                                    <div className="text-white font-medium text-sm">{tvGlobalItem.title}</div>
+                                    <div className="text-black font-medium text-sm">{tvGlobalItem.title}</div>
                                   </div>
                                 </button>
                               );
@@ -337,8 +334,8 @@ const ZimFinancialData = () => {
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-700">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-400">Click to view global market data</span>
-                              <button className="px-3 py-1 rounded text-sm font-medium text-purple-400 bg-gray-700 hover:bg-gray-600 transition-colors">
+                              <span className="text-sm text-black-100">Click to view global market data</span>
+                              <button className="px-3 py-1 rounded text-sm font-medium text-black-100 bg-slate-100 hover:bg-gray-600 transition-colors">
                                 View All
                               </button>
                             </div>

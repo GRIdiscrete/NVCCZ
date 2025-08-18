@@ -1,0 +1,90 @@
+/* Premium Blue theme tokens (light + dark variants)
+   Apply by adding class "theme-blue" to <html> or <body>.
+   Inspired by Apple calm spacing + Microsoft clean blue vibe.
+*/
+
+.theme-blue {
+  /* Base (light) */
+  /* Slightly higher contrast without being too dark or light */
+  --background: oklch(0.97 0.015 255);
+  --foreground: oklch(0.20 0.02 255);
+
+  --card: oklch(0.985 0.012 255);
+  --card-foreground: var(--foreground);
+
+  /* Primary brand blue */
+  --primary: oklch(0.60 0.18 252);
+  --primary-foreground: oklch(0.99 0 0);
+
+  /* Secondary and accents (lighter blues/purples) */
+  --secondary: oklch(0.96 0.04 255);
+  --secondary-foreground: oklch(0.24 0.03 255);
+  --accent: oklch(0.965 0.06 255);
+  --accent-foreground: oklch(0.24 0.03 255);
+
+  /* UI chrome */
+  --border: oklch(0.90 0.02 255);
+  --input: oklch(0.90 0.02 255);
+  --ring: oklch(0.66 0.12 255);
+
+  /* Muted text */
+  --muted: oklch(0.975 0.012 255);
+  --muted-foreground: oklch(0.48 0.02 255);
+
+  /* Charts (blue-forward) */
+  --chart-1: oklch(0.64 0.18 252);
+  --chart-2: oklch(0.72 0.12 225);
+  --chart-3: oklch(0.58 0.09 260);
+  --chart-4: oklch(0.78 0.12 190);
+  --chart-5: oklch(0.54 0.1 280);
+
+  /* Sidebar */
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+.theme-blue.dark {
+  /* Dark blue variant (lightened slightly for readability) */
+  --background: oklch(0.20 0.02 255);
+  --foreground: oklch(0.98 0 0);
+
+  --card: oklch(0.26 0.02 255);
+  --card-foreground: var(--foreground);
+
+  --primary: oklch(0.72 0.18 252);
+  --primary-foreground: oklch(0.20 0.02 255);
+
+  --secondary: oklch(0.32 0.02 255);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  --accent: oklch(0.34 0.03 255);
+  --accent-foreground: oklch(0.98 0 0);
+
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.72 0.12 255);
+
+  --muted: oklch(0.30 0.02 255);
+  --muted-foreground: oklch(0.72 0.02 255);
+
+  --chart-1: oklch(0.72 0.18 252);
+  --chart-2: oklch(0.62 0.12 225);
+  --chart-3: oklch(0.78 0.12 190);
+  --chart-4: oklch(0.58 0.09 260);
+  --chart-5: oklch(0.64 0.08 280);
+
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
