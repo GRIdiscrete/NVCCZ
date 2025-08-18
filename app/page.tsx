@@ -144,6 +144,12 @@ export default function Home() {
               <EventsCalendar events={eventsData} />
             </TabsContent>
           )}
+          {currentTab === "dashboard" && (
+                      <TabsContent value="dashboard" className="text-gray-300">
+                        <Dashboard />
+                      </TabsContent>
+                    )}
+                    
         </motion.div>
       </AnimatePresence>
     </div>
@@ -168,7 +174,7 @@ export default function Home() {
                   <TabsList 
                     className="mb-8 grid w-full grid-cols-4 gap-2 rounded-xl border border-input bg-card p-2 shadow-lg backdrop-blur"
                   >
-                    {['feed', 'newsletter', 'forum', 'calendar'].map((tabValue) => (
+                    {['feed','dashboard' 'newsletter', 'forum', 'calendar'].map((tabValue) => (
                       <TabsTrigger key={tabValue} value={tabValue} asChild>
                         <motion.button
                           className="group relative w-full overflow-hidden rounded-lg px-6 py-3 text-base font-semibold text-muted-foreground data-[state=active]:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors"
