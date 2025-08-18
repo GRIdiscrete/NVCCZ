@@ -1,7 +1,9 @@
-'use client'
+"use client"; // ✨ required to use hooks & next/navigation in app router
+
 import { useState, useEffect } from 'react'
 import { FiCalendar, FiPlus, FiX, FiDollarSign, FiUser, FiTrash2 } from 'react-icons/fi'
-import ERP from "../../page"
+import { useRouter } from 'next/navigation' // ✨ new
+import ERP from '../../page'
 
 // Type definitions
 type Customer = {
@@ -46,13 +48,17 @@ type InvoiceFormData = {
   items: InvoiceItem[]
 }
 
+type TaxMode = 'exclusive' | 'inclusive'
+
+const TAX_PRESETS = [0, 0.05, 0.145, 0.15, 0.16, 0.2]
+
 const formatCurrency = (amount: number, currencyCode: string = 'USD') => {
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currencyCode,
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(amount)
   } catch {
     return `${currencyCode} ${amount.toFixed(2)}`
@@ -60,6 +66,8 @@ const formatCurrency = (amount: number, currencyCode: string = 'USD') => {
 }
 
 const CreateInvoice = () => {
+  const router = useRouter(); // ✨ new
+
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currencies, setCurrencies] = useState<Currency[]>([])
@@ -72,53 +80,78 @@ const CreateInvoice = () => {
     description: '',
     invoiceNumber: '',
     isTaxable: true,
-    items: [{
-      description: '',
-      amount: 0,
-      category: ''
-    }]
+    items: [
+      {
+        description: '',
+        amount: 0,
+        category: '',
+      },
+    ],
   })
+
+  // New: smarter tax UI state
+  const [taxMode, setTaxMode] = useState<TaxMode>('exclusive')
+  const [taxRate, setTaxRate] = useState<number>(0.15) // defaults to 15% VAT; user can change
+
+  // Persist tax preferences per client (smart defaulting)
+  useEffect(() => {
+    if (!formData.customerId) return
+    const key = `invoice:taxprefs:${formData.customerId}`
+    try {
+      const raw = localStorage.getItem(key)
+      if (raw) {
+        const saved = JSON.parse(raw)
+        if (typeof saved.isTaxable === 'boolean') {
+          setFormData((prev) => ({ ...prev, isTaxable: saved.isTaxable }))
+        }
+        if (saved.taxMode === 'exclusive' || saved.taxMode === 'inclusive') setTaxMode(saved.taxMode)
+        if (typeof saved.taxRate === 'number') setTaxRate(saved.taxRate)
+      }
+    } catch {}
+  }, [formData.customerId])
+
+  useEffect(() => {
+    if (!formData.customerId) return
+    const key = `invoice:taxprefs:${formData.customerId}`
+    const payload = { isTaxable: formData.isTaxable, taxMode, taxRate }
+    try {
+      localStorage.setItem(key, JSON.stringify(payload))
+    } catch {}
+  }, [formData.customerId, formData.isTaxable, taxMode, taxRate])
 
   // Fetch customers and currencies
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
       const token = sessionStorage.getItem('token')
-      
+
       try {
-        // Fetch customers
-        // Fetch customers
+        // Customers
         const customersResponse = await fetch('https://nvccz-pi.vercel.app/api/accounting/customers', {
-            headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         })
-        
         if (!customersResponse.ok) throw new Error('Failed to fetch customers')
         const customersData = await customersResponse.json()
-        
-        // Add more robust checking of the response structure
         if (customersData.success && customersData.data && Array.isArray(customersData.data.customers)) {
-            setCustomers(customersData.data.customers)
+          setCustomers(customersData.data.customers)
         } else {
-            console.error('Unexpected customers data format:', customersData)
-            throw new Error('Unexpected customers data format')
+          console.error('Unexpected customers data format:', customersData)
+          throw new Error('Unexpected customers data format')
         }
 
-        // Fetch currencies
+        // Currencies
         const currenciesRes = await fetch('https://nvccz-pi.vercel.app/api/accounting/currencies', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+          headers: { Authorization: `Bearer ${token}` },
+        })
         if (currenciesRes.ok) {
-            const currenciesData = await currenciesRes.json();
-            // Filter currencies to only include active ones
-            const activeCurrencies = currenciesData.data.filter((c: Currency) => c.isActive);
-            setCurrencies(activeCurrencies || []);
-            // Set default currency if available (only from active currencies)
-            const defaultCurrency = activeCurrencies.find((c: Currency) => c.isDefault);
-            if (defaultCurrency) {
-            setFormData(prev => ({ ...prev, currencyId: defaultCurrency.id }));
-            }
+          const currenciesData = await currenciesRes.json()
+          const activeCurrencies = currenciesData.data.filter((c: Currency) => c.isActive)
+          setCurrencies(activeCurrencies || [])
+          const defaultCurrency = activeCurrencies.find((c: Currency) => c.isDefault)
+          if (defaultCurrency) {
+            setFormData((prev) => ({ ...prev, currencyId: defaultCurrency.id }))
+          }
         }
-
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -129,11 +162,20 @@ const CreateInvoice = () => {
     fetchData()
   }, [])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value, type } = e.target as HTMLInputElement
-    setFormData(prev => ({
+
+    // ✨ intercept special "create client" option
+    if (name === 'customerId' && value === '__create__') {
+      router.push('/ERP/Tools/Clients')
+      return
+    }
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }))
   }
 
@@ -141,78 +183,97 @@ const CreateInvoice = () => {
     const newItems = [...formData.items]
     newItems[index] = {
       ...newItems[index],
-      [field]: field === 'amount' ? Number(value) : value
+      [field]: field === 'amount' ? Number(value) : value,
     }
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       items: newItems,
-      amount: newItems.reduce((sum, item) => sum + (item.amount || 0), 0).toString()
+      amount: newItems.reduce((sum, item) => sum + (item.amount || 0), 0).toString(),
     }))
   }
 
   const addItem = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      items: [...prev.items, { description: '', amount: 0, category: '' }]
+      items: [...prev.items, { description: '', amount: 0, category: '' }],
     }))
   }
 
   const removeItem = (index: number) => {
     const newItems = formData.items.filter((_, i) => i !== index)
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       items: newItems,
-      amount: newItems.reduce((sum, item) => sum + (item.amount || 0), 0).toString()
+      amount: newItems.reduce((sum, item) => sum + (item.amount || 0), 0).toString(),
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true) // Set submitting state
-    
+    setIsSubmitting(true)
+
     const token = sessionStorage.getItem('token')
-    
+
     try {
       const response = await fetch('https://nvccz-pi.vercel.app/api/accounting/invoices', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
           amount: parseFloat(formData.amount),
-          items: formData.items.map(item => ({
-            ...item,
-            amount: Number(item.amount)
-          }))
+          items: formData.items.map((item) => ({ ...item, amount: Number(item.amount) })),
         }),
       })
-  
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
-  
+
       const data = await response.json()
       if (data.success) {
-        // Reset form on success
         setFormData({
           customerId: '',
           amount: '',
-          currencyId: currencies.find(c => c.isDefault)?.id || '',
+          currencyId: currencies.find((c) => c.isDefault)?.id || '',
           transactionDate: new Date().toISOString().split('T')[0],
           description: '',
           invoiceNumber: '',
           isTaxable: true,
-          items: [{ description: '', amount: 0, category: '' }]
+          items: [{ description: '', amount: 0, category: '' }],
         })
+        setTaxMode('exclusive')
+        setTaxRate(0.15)
       }
     } catch (error) {
       console.error('Error creating invoice:', error)
-    //   setError(error instanceof Error ? error.message : 'Failed to save invoice')
     } finally {
-      setIsSubmitting(false) // Reset submitting state
+      setIsSubmitting(false)
+    }
+  }
+
+  // ==== Derived amounts (for friendlier preview) ====
+  const currencyCode = formData.currencyId
+    ? currencies.find((c) => c.id === formData.currencyId)?.code || 'USD'
+    : 'USD'
+  const subtotal = parseFloat(formData.amount || '0') || 0
+
+  let taxAmount = 0
+  let subtotalExcl = subtotal
+  let total = subtotal
+
+  if (formData.isTaxable) {
+    if (taxMode === 'exclusive') {
+      taxAmount = +(subtotal * taxRate).toFixed(2)
+      total = +(subtotal + taxAmount).toFixed(2)
+    } else {
+      // inclusive: item prices include tax already
+      taxAmount = +((subtotal * taxRate) / (1 + taxRate)).toFixed(2)
+      subtotalExcl = +(subtotal - taxAmount).toFixed(2)
+      total = subtotal
     }
   }
 
@@ -243,15 +304,11 @@ const CreateInvoice = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <form 
-            id="invoice-form"
-            onSubmit={handleSubmit} 
-            className="divide-y divide-gray-100"
-          >
+          <form id="invoice-form" onSubmit={handleSubmit} className="divide-y divide-gray-100">
             {/* Client & Basic Info Section */}
             <div className="p-6 space-y-6">
               <h2 className="text-xl font-semibold text-gray-800">Client & Details</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Customer Dropdown */}
                 <div className="col-span-1">
@@ -269,11 +326,13 @@ const CreateInvoice = () => {
                       disabled={isLoading}
                     >
                       <option value="">{isLoading ? 'Loading clients...' : 'Select a client'}</option>
-                      {customers.map(customer => (
+                      {customers.map((customer) => (
                         <option key={customer.id} value={customer.id}>
                           {customer.name}
                         </option>
                       ))}
+                      {/* ✨ Special action at the bottom */}
+                      <option value="__create__">+ Create a client…</option>
                     </select>
                   </div>
                 </div>
@@ -326,7 +385,7 @@ const CreateInvoice = () => {
                       disabled={isLoading}
                     >
                       <option value="">{isLoading ? 'Loading currencies...' : 'Select currency'}</option>
-                      {currencies.map(currency => (
+                      {currencies.map((currency) => (
                         <option key={currency.id} value={currency.id}>
                           {currency.code} - {currency.name}
                         </option>
@@ -335,17 +394,7 @@ const CreateInvoice = () => {
                   </div>
                 </div>
 
-                {/* Taxable */}
-                <div className="flex items-center pt-6">
-                  <input
-                    type="checkbox"
-                    name="isTaxable"
-                    checked={formData.isTaxable}
-                    onChange={handleInputChange}
-                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                  />
-                  <label className="ml-3 text-sm font-medium text-gray-700">Include tax</label>
-                </div>
+                {/* NOTE: Tax switch moved to Summary section for better UX */}
 
                 {/* Description */}
                 <div className="md:col-span-2">
@@ -432,25 +481,119 @@ const CreateInvoice = () => {
               </div>
             </div>
 
-            {/* Summary Section */}
+            {/* Summary Section with smarter Tax controls */}
             <div className="p-6 bg-gray-50">
-              <div className="flex justify-end">
-                <div className="w-full md:w-1/3 space-y-3">
-                  <div className="flex justify-between text-gray-700">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrency(parseFloat(formData.amount || '0'), formData.currencyId ? currencies.find(c => c.id === formData.currencyId)?.code || 'USD' : 'USD')}</span>
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                {/* Tax Controls Card */}
+                <div className="w-full md:w-1/2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-800">Tax</h3>
+                    {/* iOS-style switch */}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={formData.isTaxable}
+                      onClick={() => setFormData((p) => ({ ...p, isTaxable: !p.isTaxable }))}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        formData.isTaxable ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          formData.isTaxable ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
                   </div>
+
+                  {/* Advanced options appear only when taxable */}
                   {formData.isTaxable && (
-                    <div className="flex justify-between text-gray-700">
-                      <span>Tax:</span>
-                      <span>Calculated at payment</span>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Mode segmented control */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Calculation</label>
+                        <div className="inline-grid grid-cols-2 rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setTaxMode('exclusive')}
+                            className={`rounded-md px-3 py-1.5 transition ${
+                              taxMode === 'exclusive' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                            }`}
+                          >
+                            Add on (exclusive)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTaxMode('inclusive')}
+                            className={`rounded-md px-3 py-1.5 transition ${
+                              taxMode === 'inclusive' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                            }`}
+                          >
+                            Included in prices
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Rate preset */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Rate</label>
+                        <select
+                          value={taxRate}
+                          onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        >
+                          {TAX_PRESETS.map((r) => (
+                            <option key={r} value={r}>
+                              {(r * 100).toFixed(1).replace('.0', '')}%
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-1 text-[11px] text-gray-500">Remembered per client.</p>
+                      </div>
                     </div>
                   )}
-                  <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold text-lg">
-                    <span>Total:</span>
-                    <span className="text-blue-600">
-                      {formatCurrency(parseFloat(formData.amount || '0'), formData.currencyId ? currencies.find(c => c.id === formData.currencyId)?.code || 'USD' : 'USD')}
-                    </span>
+                </div>
+
+                {/* Totals Card */}
+                <div className="w-full md:w-1/2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="space-y-2 text-sm">
+                    {formData.isTaxable && taxMode === 'inclusive' ? (
+                      <>
+                        <div className="flex items-center justify-between text-gray-700">
+                          <span>Subtotal (excl.)</span>
+                          <span>{formatCurrency(subtotalExcl, currencyCode)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-gray-700">
+                          <span>Tax @ {(taxRate * 100).toFixed(1).replace('.0', '')}%</span>
+                          <span>{formatCurrency(taxAmount, currencyCode)}</span>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-base font-semibold">
+                          <span>Total</span>
+                          <span className="text-blue-600">{formatCurrency(total, currencyCode)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between text-gray-700">
+                          <span>Subtotal</span>
+                          <span>{formatCurrency(subtotal, currencyCode)}</span>
+                        </div>
+                        {formData.isTaxable && (
+                          <div className="flex items-center justify-between text-gray-700">
+                            <span>Tax @ {(taxRate * 100).toFixed(1).replace('.0', '')}%</span>
+                            <span>{formatCurrency(taxAmount, currencyCode)}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-base font-semibold">
+                          <span>Total</span>
+                          <span className="text-blue-600">{formatCurrency(total, currencyCode)}</span>
+                        </div>
+                      </>
+                    )}
+                    {!formData.isTaxable && (
+                      <p className="pt-1 text-[11px] text-gray-500">Tax not applied. Toggle on to preview tax.</p>
+                    )}
                   </div>
                 </div>
               </div>
