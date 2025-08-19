@@ -111,6 +111,7 @@ const GeneralLedger = () => {
         if (!token) {
           throw new Error('No authentication token found');
         }
+        console.log(token);
 
         const response = await fetch('https://nvccz-pi.vercel.app/api/accounting/journal-entries', {
           headers: {
@@ -139,6 +140,8 @@ const GeneralLedger = () => {
 
     fetchGeneralLedger();
   }, []);
+
+
 
   useEffect(() => {
     const filtered = journalEntries.filter(entry => {

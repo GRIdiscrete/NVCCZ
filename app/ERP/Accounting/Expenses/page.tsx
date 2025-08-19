@@ -107,6 +107,8 @@ import ERP from '../../page';
   description: string;
   receiptNumber: string;
   isTaxable: boolean;
+  // NEW: payment method captured from dropdown
+  paymentMethod: string; // expected values: 'BANK' | 'CASH' | 'CREDIT'
 };
 
  type ApiResponse = {
@@ -146,6 +148,7 @@ const Expenses = () => {
     description: '',
     receiptNumber: '',
     isTaxable: true,
+    paymentMethod: '', // force explicit selection
   });
 
   // Fetch expenses (reusable)
@@ -256,6 +259,8 @@ const Expenses = () => {
         body: JSON.stringify({
           ...formData,
           amount: parseFloat(formData.amount),
+          // ensure uppercase as required by API contract
+          paymentMethod: (formData.paymentMethod || '').toUpperCase(),
         }),
       });
 
@@ -288,6 +293,7 @@ const Expenses = () => {
             description: '',
             receiptNumber: '',
             isTaxable: true,
+            paymentMethod: '',
           });
         }, 700);
       } else {
@@ -485,6 +491,25 @@ const Expenses = () => {
                       className="h-4 w-4 text-navy-600 focus:ring-navy-500 border-gray-300 rounded"
                     />
                     <label className="ml-2 block text-sm text-gray-700">Is Taxable</label>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select
+                      name="paymentMethod"
+                      value={formData.paymentMethod}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      disabled={submitStage === 'loading'}
+                    >
+                      <option value="">Select Method</option>
+                      <option value="BANK">Bank</option>
+                      <option value="CASH">Cash</option>
+                      <option value="CREDIT">Credit</option>
+                    </select>
+                    <p className="mt-1 text-[11px] text-gray-500">Will be sent to the API as upper-case (e.g. "BANK").</p>
                   </div>
 
                   {/* Receipt Number */}

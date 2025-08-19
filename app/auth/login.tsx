@@ -36,6 +36,7 @@ const LoginPage = () => {
       if (data.success) {
         sessionStorage.setItem('token', data.token);
         sessionStorage.setItem('userID', data.user.id);
+        console.log(data.token,data.user.id )
         router.push('/');
       } else {
         setError(data.message || 'Login failed');

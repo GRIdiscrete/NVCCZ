@@ -226,6 +226,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const token = sessionStorage.getItem('token');
+        console.log(token)
         if (!token) throw new Error('No authentication token found');
 
         const response = await fetch(
