@@ -221,7 +221,7 @@ const Dashboard = () => {
     profit: 0,
     cash: 0,
   });
-
+// com
   useEffect(() => {
     const fetchData = async () => {
       try {
